@@ -27,17 +27,17 @@ public class NejikoController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log("アップデート");
+        //Debug.Log("アップデート");
 
         //CharactorControllerコンポーネントの能力で地面判定ができる(→isGrounded)
         if (controller.isGrounded)　//地面にいる時
         {
-            Debug.Log("地面いる");
+            //Debug.Log("地面いる");
 
             //上下キーの入力があれば
             if (Input.GetAxis("Vertical") != 0.0f)
             {
-                Debug.Log("上下おした");
+                //Debug.Log("上下おした");
                 //キャラクター主観における奥行き(Z軸）を前か後ろ方向の数値を設定
                 moveDirection.z = Input.GetAxis("Vertical") * speedZ;
             }
@@ -54,7 +54,7 @@ public class NejikoController : MonoBehaviour
             //ジャンプキーがおされたら
             if (Input.GetButton("Jump"))
             {
-                Debug.Log("ジャンプおした");
+                //Debug.Log("ジャンプおした");
 
                 //Y軸方向に変数speedJumpに設定した数字を加える
                 moveDirection.y = speedJump;
@@ -75,6 +75,7 @@ public class NejikoController : MonoBehaviour
         //グローバル座標におきかえたプレイヤーの動きのデータをもとに実際に動作させる
         //CharactorControllerコンポーネントのMoveメソッドの引数に動かしたい方向を指定
         controller.Move(globalDirection * Time.deltaTime);
+        //controller.Move(moveDirection * Time.deltaTime);
 
         //もしプレイヤーが地面に触れていたらY軸にかかる力を0にする
         if (controller.isGrounded) moveDirection.y = 0;
@@ -84,7 +85,5 @@ public class NejikoController : MonoBehaviour
         //プレイヤーが止まっている時つまり(moveDirection.z != 0)がfalseの時→オフ
         //※オフという事はIdleアニメになっている
         animator.SetBool("run", moveDirection.z != 0.0f);
-
-
     }
 }
