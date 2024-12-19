@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class NejikoController : MonoBehaviour
 {
+    //レーンの管理に関係
+    //レーンの前提条件
+    const int MinLane = -2; //最も左のレーン
+    const int MaxLane = 2; //最も右のレーン
+    const float LaneWidth = 1.0f; //レーンの幅
+
+    int targetLane; //プレイ中に随時目指すべきレーン
+
     //コンポーネントの参照用
     CharacterController controller;
     Animator animator;
@@ -13,8 +21,10 @@ public class NejikoController : MonoBehaviour
 
     //各種設定
     public float gravity;　//重力の強さ
-    public float speedZ;  //スピード
+    public float speedZ;  //スピード 前に進む力
+    public float speedX; //横に移動する力
     public float speedJump; //ジャンプ力
+    public float accelarationZ; //Nejikoがトップスピードにいくための加速度
 
     // Start is called before the first frame update
     void Start()
@@ -27,6 +37,25 @@ public class NejikoController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //キー入力によるメソッド発動
+        if (Input.GetKeyDown("left")) MoveToLeft();
+        if (Input.GetKeyDown("right")) MoveToRight();
+        if (Input.GetKeyDown("space")) Jump();
+
+        //自動で前に進む　※トップスピードを目指して徐々に加速する
+        //①加速値を決める
+        float accelaratedZ = moveDirection.z + (accelarationZ * Time.deltaTime);
+        //②moveDirection.zを最終的な加速値に書き換える
+        //Clampは第2引数～第3引数の数値を越える際、最小値か最大値に変換してしまう
+        //※speedZで早さを打ち止め
+        moveDirection.z = Mathf.Clamp(accelaratedZ,0,speedZ);
+
+        //左右キーの入力状況に応じてレーン移動
+        //※目的地に近づくほどradioXの値は減衰
+        float ratioX = (targetLane * LaneWidth - transform.position.x) / LaneWidth;
+        moveDirection.x = ratioX * speedX;
+
+
         //Debug.Log("アップデート");
 
         //CharactorControllerコンポーネントの能力で地面判定ができる(→isGrounded)
