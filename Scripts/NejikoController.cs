@@ -48,50 +48,13 @@ public class NejikoController : MonoBehaviour
         //②moveDirection.zを最終的な加速値に書き換える
         //Clampは第2引数～第3引数の数値を越える際、最小値か最大値に変換してしまう
         //※speedZで早さを打ち止め
-        moveDirection.z = Mathf.Clamp(accelaratedZ,0,speedZ);
+        moveDirection.z = Mathf.Clamp(accelaratedZ, 0, speedZ);
 
         //左右キーの入力状況に応じてレーン移動
         //※目的地に近づくほどradioXの値は減衰
         float ratioX = (targetLane * LaneWidth - transform.position.x) / LaneWidth;
         moveDirection.x = ratioX * speedX;
 
-
-        //Debug.Log("アップデート");
-
-        //CharactorControllerコンポーネントの能力で地面判定ができる(→isGrounded)
-        if (controller.isGrounded)　//地面にいる時
-        {
-            //Debug.Log("地面いる");
-
-            //上下キーの入力があれば
-            if (Input.GetAxis("Vertical") != 0.0f)
-            {
-                //Debug.Log("上下おした");
-                //キャラクター主観における奥行き(Z軸）を前か後ろ方向の数値を設定
-                moveDirection.z = Input.GetAxis("Vertical") * speedZ;
-            }
-            else //上下キーの入力がなければ
-            {
-                //キャラクター主観における奥行き(Z軸)の数字は0
-                moveDirection.z = 0;
-            }
-
-
-            //左右キーの入れ具体に応じて即座にキャラクターを回転させる
-            transform.Rotate(0, Input.GetAxis("Horizontal") * 3, 0);
-
-            //ジャンプキーがおされたら
-            if (Input.GetButton("Jump"))
-            {
-                //Debug.Log("ジャンプおした");
-
-                //Y軸方向に変数speedJumpに設定した数字を加える
-                moveDirection.y = speedJump;
-                //アニメーターのTriggerパラメータ"jump"をオンにしてジャンプアニメに移行
-                //※Triggerパラメータは一度発動したら自動ですぐオフになり元のアニメに戻る
-                animator.SetTrigger("jump");
-            }
-        }
 
         //常に重力の力がY軸にかかっている
         moveDirection.y -= gravity * Time.deltaTime;
@@ -115,4 +78,36 @@ public class NejikoController : MonoBehaviour
         //※オフという事はIdleアニメになっている
         animator.SetBool("run", moveDirection.z != 0.0f);
     }
+
+    //自作メソッド
+
+    //左ボタンがおされたら左レーンをtargetにする
+    public void MoveToLeft()
+    {
+        //地面にいる＆それまでに利用したtargetLaneの数字が最小値(-2)にまだいってなかったら
+        if (controller.isGrounded && targetLane > MinLane) targetLane--;
+    }
+
+    //右ボタンがおされたら右レーンをtargetにする
+    public void MoveToRight()
+    {
+        //地面にいる＆それまでに利用したtargetLaneの数字が最大値(2)にまだいってなかったら
+        if (controller.isGrounded && targetLane < MaxLane) targetLane++;
+    }
+
+
+    //Updateの中でジャンプボタンがおされたら発動
+    public void Jump()
+    {
+        //CharactorControllerコンポーネントの能力で地面判定ができる(→isGrounded)
+        if (controller.isGrounded)　//地面にいる時
+        {
+            //Y軸方向に変数speedJumpに設定した数字を加える
+            moveDirection.y = speedJump;
+            //アニメーターのTriggerパラメータ"jump"をオンにしてジャンプアニメに移行
+            //※Triggerパラメータは一度発動したら自動ですぐオフになり元のアニメに戻る
+            animator.SetTrigger("jump");
+        }
+    }
+
 }
