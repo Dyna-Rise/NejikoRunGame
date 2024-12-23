@@ -97,7 +97,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gravity: 20
-  speedZ: 5
+  speedZ: 10
   speedX: 3
   speedJump: 8
   accelarationZ: 10
