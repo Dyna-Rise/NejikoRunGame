@@ -7,7 +7,7 @@ public class StageGenerator : MonoBehaviour
     
     const int StageChipSize = 30;　//１ステージのサイズ
 
-    int currentChipIndex;　//今何番目にいるのか
+    int currentChipIndex;　//最先端のステージ番号が何番か
 
     public Transform character;//Playerの情報
     public GameObject[] stageChips; //ランダムに生成したいステージ達の素

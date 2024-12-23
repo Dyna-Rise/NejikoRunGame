@@ -10,6 +10,10 @@ public class NejikoController : MonoBehaviour
     const int MaxLane = 2; //最も右のレーン
     const float LaneWidth = 1.0f; //レーンの幅
 
+    //ダメージに関する定数
+    const int DefaultLife = 3; //ネジコのLife
+    const float StunDuration = 0.5f; //気絶時間
+
     int targetLane; //プレイ中に随時目指すべきレーン
 
     //コンポーネントの参照用
@@ -19,12 +23,31 @@ public class NejikoController : MonoBehaviour
     //ローカル座標
     Vector3 moveDirection = Vector3.zero;
 
+    //ダメージに関する変数（こちらが変数）
+    int life = DefaultLife;
+    float recoverTime = 0.0f;
+
     //各種設定
     public float gravity;　//重力の強さ
     public float speedZ;  //スピード 前に進む力
     public float speedX; //横に移動する力
     public float speedJump; //ジャンプ力
     public float accelarationZ; //Nejikoがトップスピードにいくための加速度
+
+    //ネジコのLifeがいくつなのかを取得するメソッド
+    public int Life()
+    {
+        return life;
+    }
+
+    //気絶しているかどうかの判別
+    bool IsStun()
+    {
+        //復帰までの時間が0より上なら
+        //まだ気絶中 → true
+        //あるいはLifeが0 →true ※うごけない
+        return recoverTime > 0.0f || life <= 0;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -42,19 +65,30 @@ public class NejikoController : MonoBehaviour
         if (Input.GetKeyDown("right")) MoveToRight();
         if (Input.GetKeyDown("space")) Jump();
 
-        //自動で前に進む　※トップスピードを目指して徐々に加速する
-        //①加速値を決める
-        float accelaratedZ = moveDirection.z + (accelarationZ * Time.deltaTime);
-        //②moveDirection.zを最終的な加速値に書き換える
-        //Clampは第2引数～第3引数の数値を越える際、最小値か最大値に変換してしまう
-        //※speedZで早さを打ち止め
-        moveDirection.z = Mathf.Clamp(accelaratedZ, 0, speedZ);
+        //気絶状態かどうかをチェック
+        if (IsStun())
+        {
+            //動けなくする
+            moveDirection.x = 0.0f;
+            moveDirection.z = 0.0f;
+            //回復までの残り時間を更新
+            recoverTime -= Time.deltaTime;
+        }
+        else
+        {
+            //自動で前に進む　※トップスピードを目指して徐々に加速する
+            //①加速値を決める
+            float accelaratedZ = moveDirection.z + (accelarationZ * Time.deltaTime);
+            //②moveDirection.zを最終的な加速値に書き換える
+            //Clampは第2引数～第3引数の数値を越える際、最小値か最大値に変換してしまう
+            //※speedZで早さを打ち止め
+            moveDirection.z = Mathf.Clamp(accelaratedZ, 0, speedZ);
 
-        //左右キーの入力状況に応じてレーン移動
-        //※目的地に近づくほどradioXの値は減衰
-        float ratioX = (targetLane * LaneWidth - transform.position.x) / LaneWidth;
-        moveDirection.x = ratioX * speedX;
-
+            //左右キーの入力状況に応じてレーン移動
+            //※目的地に近づくほどradioXの値は減衰
+            float ratioX = (targetLane * LaneWidth - transform.position.x) / LaneWidth;
+            moveDirection.x = ratioX * speedX;
+        }
 
         //常に重力の力がY軸にかかっている
         moveDirection.y -= gravity * Time.deltaTime;
@@ -84,6 +118,9 @@ public class NejikoController : MonoBehaviour
     //左ボタンがおされたら左レーンをtargetにする
     public void MoveToLeft()
     {
+        //もしも気絶状態であれば、回復までは入力無効
+        if (IsStun()) return;
+
         //地面にいる＆それまでに利用したtargetLaneの数字が最小値(-2)にまだいってなかったら
         if (controller.isGrounded && targetLane > MinLane) targetLane--;
     }
@@ -91,6 +128,9 @@ public class NejikoController : MonoBehaviour
     //右ボタンがおされたら右レーンをtargetにする
     public void MoveToRight()
     {
+        //もしも気絶状態であれば、回復までは入力無効
+        if (IsStun()) return;
+
         //地面にいる＆それまでに利用したtargetLaneの数字が最大値(2)にまだいってなかったら
         if (controller.isGrounded && targetLane < MaxLane) targetLane++;
     }
@@ -99,6 +139,9 @@ public class NejikoController : MonoBehaviour
     //Updateの中でジャンプボタンがおされたら発動
     public void Jump()
     {
+        //もしも気絶状態であれば、回復までは入力無効
+        if (IsStun()) return;
+
         //CharactorControllerコンポーネントの能力で地面判定ができる(→isGrounded)
         if (controller.isGrounded)　//地面にいる時
         {
@@ -110,4 +153,28 @@ public class NejikoController : MonoBehaviour
         }
     }
 
+    //CharactorControllerの衝突判定
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        //すでに気絶状態なら重複して発動はしない
+        if (IsStun()) return;
+
+        if(hit.gameObject.tag == "Robo")
+        {
+            //ライフを1減らす
+            life--;
+
+            //リカバー時間を0.5秒に設定して気絶常態に突入
+            recoverTime = StunDuration;
+            
+            //ダメージアニメの発動
+            //SetTriggerは一度発動させると勝手に元のアニメに戻る
+            animator.SetTrigger("damage");
+            
+            //ヒットした相手を削除
+            Destroy(hit.gameObject);
+        }
+    }
+
 }
+
